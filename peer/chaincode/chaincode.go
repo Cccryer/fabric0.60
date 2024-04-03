@@ -36,8 +36,10 @@ func Cmd() *cobra.Command {
 
 	flags.StringVarP(&chaincodeLang, "lang", "l", "golang",
 		fmt.Sprintf("Language the %s is written in", chainFuncName))
+
 	flags.StringVarP(&chaincodeCtorJSON, "ctor", "c", "{}",
 		fmt.Sprintf("Constructor message for the %s in JSON format", chainFuncName))
+
 	flags.StringVarP(&chaincodeAttributesJSON, "attributes", "a", "[]",
 		fmt.Sprintf("User attributes for the %s in JSON format", chainFuncName))
 	flags.StringVarP(&chaincodePath, "path", "p", common.UndefinedParamValue,

@@ -17,7 +17,6 @@ limitations under the License.
 package peer
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -505,9 +504,7 @@ func (p *Impl) sendTransactionsToLocalEngine(transaction *pb.Transaction) *pb.Re
 
 	peerLogger.Debugf("Marshalling transaction %s to send to local engine", transaction.Type)
 	data, err := proto.Marshal(transaction)
-	jdata, err := json.Marshal(transaction)
-	peerLogger.Debugf("===================================================================================================\n%s", jdata)
-	peerLogger.Debugf("***************************************************************************************************\n%s", data)
+	//TODO:好像改过奇怪的东西这里
 	if err != nil {
 		return &pb.Response{Status: pb.Response_FAILURE, Msg: []byte(fmt.Sprintf("Error sending transaction to local engine: %s", err))}
 	}
@@ -628,8 +625,10 @@ func (p *Impl) handleChat(ctx context.Context, stream ChatStream, initiatedStrea
 //ExecuteTransaction executes transactions decides to do execute in dev or prod mode
 func (p *Impl) ExecuteTransaction(transaction *pb.Transaction) (response *pb.Response) {
 	if p.isValidator {
+		//vp节点进行共识
 		response = p.sendTransactionsToLocalEngine(transaction)
 	} else {
+		//nvp节点校验交易，将交易转发给vp节点
 		peerAddresses := p.discHelper.GetRandomNodes(1)
 		response = p.SendTransactionsToPeer(peerAddresses[0], transaction)
 	}

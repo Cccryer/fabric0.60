@@ -103,6 +103,9 @@ message ChaincodeInvocationSpec {
     //  2, a decoding used to decode user (string) input to bytes
     // Currently, SHA256 with BASE64 is supported (e.g. idGenerationAlg='sha256base64')
     string idGenerationAlg = 2;
+
+    uint32 pownonce = 3;
+    uint32 nbits = 4;
 }
 
 // This structure contain transaction data that we send to the chaincode

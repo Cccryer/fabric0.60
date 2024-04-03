@@ -19,7 +19,6 @@ package protos
 import (
 	"encoding/json"
 	"fmt"
-
 	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/util"
 )
@@ -93,10 +92,14 @@ func NewChaincodeDeployTransaction(chaincodeDeploymentSpec *ChaincodeDeploymentS
 
 // NewChaincodeExecute is used to invoke chaincode.
 func NewChaincodeExecute(chaincodeInvocationSpec *ChaincodeInvocationSpec, uuid string, typ Transaction_Type) (*Transaction, error) {
+	//把nonce存到spec中，copy到tx中
 	transaction := new(Transaction)
 	transaction.Type = typ
 	transaction.Txid = uuid
 	transaction.Timestamp = util.CreateUtcTimestamp()
+
+	transaction.pownonce = chaincodeInvocationSpec.pownonce
+
 	cID := chaincodeInvocationSpec.ChaincodeSpec.GetChaincodeID()
 	if cID != nil {
 		data, err := proto.Marshal(cID)

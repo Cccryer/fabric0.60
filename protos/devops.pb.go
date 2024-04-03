@@ -204,6 +204,7 @@ func (c *devopsClient) Deploy(ctx context.Context, in *ChaincodeSpec, opts ...gr
 	return out, nil
 }
 
+//grpc调用invoke处理
 func (c *devopsClient) Invoke(ctx context.Context, in *ChaincodeInvocationSpec, opts ...grpc.CallOption) (*Response, error) {
 	out := new(Response)
 	err := grpc.Invoke(ctx, "/protos.Devops/Invoke", in, out, c.cc, opts...)

@@ -150,6 +150,7 @@ func serve(args []string) error {
 
 	// Create the peerServer
 	if peer.ValidatorEnabled() {
+		//vp节点
 		logger.Debug("Running as validating peer - making genesis block if needed")
 		makeGenesisError := genesis.MakeGenesis()
 		if makeGenesisError != nil {

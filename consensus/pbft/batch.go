@@ -82,7 +82,7 @@ func newObcBatch(id uint64, config *viper.Viper, stack consensus.Stack) *obcBatc
 	op.manager.SetReceiver(op)
 	etf := events.NewTimerFactoryImpl(op.manager)
 	op.pbft = newPbftCore(id, config, op, etf)
-	op.manager.Start()
+	op.manager.Start() //go eventLoop, 开始事件处理
 	blockchainInfoBlob := stack.GetBlockchainInfoBlob()
 	op.externalEventReceiver.manager = op.manager
 	op.broadcaster = newBroadcaster(id, op.pbft.N, op.pbft.f, op.pbft.broadcastTimeout, stack)
@@ -136,6 +136,7 @@ func (op *obcBatch) Close() {
 
 func (op *obcBatch) submitToLeader(req *Request) events.Event {
 	// Broadcast the request to the network, in case we're in the wrong view
+	//这里从客户端收到不应认为会作恶，此广播一定发生
 	op.broadcastMsg(&BatchMessage{Payload: &BatchMessage_Request{Request: req}})
 	op.logAddTxFromRequest(req)
 	op.reqStore.storeOutstanding(req)
@@ -146,7 +147,7 @@ func (op *obcBatch) submitToLeader(req *Request) events.Event {
 	return nil
 }
 
-func (op *obcBatch) broadcastMsg(msg *BatchMessage) {
+func (op *obcBatch) broadcastMsg(msg *BatchMessage) { //msg.payload.request == req, req.payload == proto.marshal(tx)
 	msgPayload, _ := proto.Marshal(msg)
 	ocMsg := &pb.Message{
 		Type:    pb.Message_CONSENSUS,
@@ -221,6 +222,18 @@ func (op *obcBatch) leaderProcReq(req *Request) events.Event {
 	// XXX check req sig
 	digest := hash(req)
 	logger.Debugf("Batch primary %d queueing new request %s", op.pbft.id, digest)
+
+	//此时可能发生恶意替换
+	//_tx := &pb.Transaction{
+	////...
+	//}
+	//_payload, err := proto.Marshal(_tx)
+	//if err != nil {
+	//	return nil
+	//}
+	//_req := op.txToReq(_payload)
+	//op.batchStore = append(op.batchStore, _req)
+
 	op.batchStore = append(op.batchStore, req)
 	op.reqStore.storePending(req)
 
@@ -229,6 +242,7 @@ func (op *obcBatch) leaderProcReq(req *Request) events.Event {
 	}
 
 	if len(op.batchStore) >= op.batchSize {
+		//>=500处理？
 		return op.sendBatch()
 	}
 
@@ -264,7 +278,7 @@ func (op *obcBatch) txToReq(tx []byte) *Request {
 
 func (op *obcBatch) processMessage(ocMsg *pb.Message, senderHandle *pb.PeerID) events.Event {
 	if ocMsg.Type == pb.Message_CHAIN_TRANSACTION {
-		req := op.txToReq(ocMsg.Payload)
+		req := op.txToReq(ocMsg.Payload) //封装request
 		return op.submitToLeader(req)
 	}
 
@@ -287,11 +301,23 @@ func (op *obcBatch) processMessage(ocMsg *pb.Message, senderHandle *pb.PeerID) e
 		}
 
 		op.logAddTxFromRequest(req)
-		op.reqStore.storeOutstanding(req)
+		op.reqStore.storeOutstanding(req) //存到队列
+		//TODO：收到共识消息，非主节点也应该做点什么表示
+		//一个用户想申请一个域名，应该计算nonce，通过用户名和域名
+		//节点收到用户交易，应该对其进行保存？
+		//为什么单播改成广播？因为单播主节点，主节点作恶会静默消息，发送自己的
+		//如何避免？改成广播，每个节点都受到消息，之后呢？共识还是由主节点主持吗？
+		//如果还是主节点主持，可以每个节点将这个消息保存起来，如果主节点作恶用自己的交易替代，可检查
+		//如果不是主节点主持，直接自行开始共识？
+		//主节点对request沉默会被换，主节点替换交易应被识别
+
+		//作恶可能发生在这，某主节点收到共识消息
 		if (op.pbft.primary(op.pbft.view) == op.pbft.id) && op.pbft.activeView {
+			//leader收集固定数量交易打包成RequestBatch返回
 			return op.leaderProcReq(req)
+
 		}
-		op.startTimerIfOutstandingRequests()
+		op.startTimerIfOutstandingRequests() //view change计时？主节点沉默
 		return nil
 	} else if pbftMsg := batchMsg.GetPbftMessage(); pbftMsg != nil {
 		senderID, err := getValidatorID(senderHandle) // who sent this?
@@ -357,6 +383,7 @@ func (op *obcBatch) ProcessEvent(event events.Event) events.Event {
 	switch et := event.(type) {
 	case batchMessageEvent:
 		ocMsg := et
+		//msg交易，sender peerid
 		return op.processMessage(ocMsg.msg, ocMsg.sender)
 	case executedEvent:
 		op.stack.Commit(nil, et.tag.([]byte))

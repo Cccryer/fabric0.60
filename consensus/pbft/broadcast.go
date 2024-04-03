@@ -46,6 +46,7 @@ type sendRequest struct {
 }
 
 func newBroadcaster(self uint64, N int, f int, broadcastTimeout time.Duration, c communicator) *broadcaster {
+	//为每个节点创建消息通道、协程
 	queueSize := 10 // XXX increase after testing
 
 	chans := make(map[uint64]chan *sendRequest)
@@ -57,6 +58,7 @@ func newBroadcaster(self uint64, N int, f int, broadcastTimeout time.Duration, c
 		closedCh:         make(chan struct{}),
 	}
 	for i := 0; i < N; i++ {
+		//除自身外，为其他节点创建消息通道
 		if uint64(i) == self {
 			continue
 		}
@@ -163,18 +165,18 @@ func (b *broadcaster) send(msg *pb.Message, dest *uint64) error {
 	if dest != nil {
 		destCount = 1
 		required = 1
-	} else {
-		destCount = len(b.msgChans)
+	} else { //==nil广播
+		destCount = len(b.msgChans) //除自身外对所有节点都有一个chan和对应的协程管理
 		required = destCount - b.f
 	}
 
-	wait := make(chan bool, destCount)
+	wait := make(chan bool, destCount) //标记发送是否成功
 
 	if dest != nil {
 		b.closed.Add(1)
 		b.unicastOne(msg, *dest, wait)
 	} else {
-		b.closed.Add(len(b.msgChans))
+		b.closed.Add(len(b.msgChans)) //同步方法，add增加未完成任务，done减少
 		for i := range b.msgChans {
 			b.unicastOne(msg, i, wait)
 		}

@@ -45,8 +45,8 @@ func (a *orderedRequests) has(key string) bool {
 }
 
 func (a *orderedRequests) add(request *Request) {
-	rc := a.wrapRequest(request)
-	if !a.has(rc.key) {
+	rc := a.wrapRequest(request) //hash键值对化
+	if !a.has(rc.key) {          //根据hash判重
 		e := a.order.PushBack(rc)
 		a.presence[rc.key] = e
 	}

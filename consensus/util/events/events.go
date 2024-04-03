@@ -107,6 +107,7 @@ func (em *managerImpl) Queue() chan<- Event {
 
 // SendEvent performs the event loop on a receiver to completion
 func SendEvent(receiver Receiver, event Event) {
+	//receiver绑定为当前obcBatch
 	next := event
 	for {
 		// If an event returns something non-nil, then process it as a new event

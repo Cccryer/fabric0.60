@@ -233,6 +233,7 @@ func (d *Devops) invokeOrQuery(ctx context.Context, chaincodeInvocationSpec *pb.
 	var err error
 	var sec crypto.Client
 	if peer.SecurityEnabled() {
+		//core.yaml文件，当前配置为false
 		if devopsLogger.IsEnabledFor(logging.DEBUG) {
 			devopsLogger.Debugf("Initializing secure devops using context %s", chaincodeInvocationSpec.ChaincodeSpec.SecureContext)
 		}
@@ -252,6 +253,7 @@ func (d *Devops) invokeOrQuery(ctx context.Context, chaincodeInvocationSpec *pb.
 	if devopsLogger.IsEnabledFor(logging.DEBUG) {
 		devopsLogger.Debugf("Sending invocation transaction (%s) to validator", transaction.Txid)
 	}
+	//构造好交易发送去共识，d.coord消息handler
 	resp := d.coord.ExecuteTransaction(transaction)
 	if resp.Status == pb.Response_FAILURE {
 		err = fmt.Errorf(string(resp.Msg))
@@ -269,7 +271,7 @@ func (d *Devops) invokeOrQuery(ctx context.Context, chaincodeInvocationSpec *pb.
 func (d *Devops) createExecTx(spec *pb.ChaincodeInvocationSpec, attributes []string, uuid string, invokeTx bool, sec crypto.Client) (*pb.Transaction, error) {
 	var tx *pb.Transaction
 	var err error
-
+	//TODO pownonce 已经在 spec中，copy给tx，sec.new和pb.new区别是啥？
 	//TODO What should we do with the attributes
 	if nil != sec {
 		if devopsLogger.IsEnabledFor(logging.DEBUG) {
@@ -284,6 +286,7 @@ func (d *Devops) createExecTx(spec *pb.ChaincodeInvocationSpec, attributes []str
 			return nil, err
 		}
 	} else {
+		//security.enabled == false情况
 		if devopsLogger.IsEnabledFor(logging.DEBUG) {
 			devopsLogger.Debugf("Creating invocation transaction (%s)", uuid)
 		}
@@ -293,6 +296,7 @@ func (d *Devops) createExecTx(spec *pb.ChaincodeInvocationSpec, attributes []str
 		} else {
 			t = pb.Transaction_CHAINCODE_QUERY
 		}
+		//proto.Marshal(chaincodeInvocationSpec) -> tx.data
 		tx, err = pb.NewChaincodeExecute(spec, uuid, t)
 		if nil != err {
 			return nil, err

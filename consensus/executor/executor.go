@@ -90,8 +90,8 @@ func (co *coordinatorImpl) ProcessEvent(event events.Event) events.Event {
 			return nil
 		}
 
-		_, err := co.rawExecutor.CommitTxBatch(co, et.metadata)
-		_ = err // TODO This should probably panic, see issue 752
+		_, err := co.rawExecutor.CommitTxBatch(co, et.metadata) //make new block
+		_ = err                                                 // TODO This should probably panic, see issue 752
 
 		co.batchInProgress = false
 

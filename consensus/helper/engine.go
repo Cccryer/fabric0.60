@@ -45,6 +45,7 @@ func (eng *EngineImpl) GetHandlerFactory() peer.HandlerFactory {
 
 // ProcessTransactionMsg processes a Message in context of a Transaction
 func (eng *EngineImpl) ProcessTransactionMsg(msg *pb.Message, tx *pb.Transaction) (response *pb.Response) {
+	//msg负载就是tx
 	//TODO: Do we always verify security, or can we supply a flag on the invoke ot this functions so to bypass check for locally generated transactions?
 	if tx.Type == pb.Transaction_CHAINCODE_QUERY {
 		if !engine.helper.valid {

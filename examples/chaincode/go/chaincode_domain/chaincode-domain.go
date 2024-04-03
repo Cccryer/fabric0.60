@@ -7,10 +7,14 @@ package main
 //hard-coding.
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	pb "github.com/hyperledger/fabric/protos"
+	"math/big"
 )
 
 // SimpleChaincode example simple Chaincode implementation
@@ -175,6 +179,80 @@ func GetDomainsByOwner(stub shim.ChaincodeStubInterface, args []string) ([]byte,
 	}
 	return domainList, nil
 }
+
+func VerifyPowNonce(stub shim.ChaincodeStubInterface, args []string) bool {
+	payload, err := stub.GetPayload()
+	if err != nil {
+	}
+	chaincodeInvocationSpec := &pb.ChaincodeInvocationSpec{}
+	err = proto.Unmarshal(payload, chaincodeInvocationSpec)
+	if err != nil {
+	}
+	chaincodespec := chaincodeInvocationSpec.GetChaincodeSpec()
+	fmt.Println(chaincodespec)
+	fmt.Println(chaincodespec.GetCtorMsg())
+	params, err := json.Marshal(chaincodespec.CtorMsg)
+	if err != nil {
+	}
+	hash := GetHash(params)
+	return CheckProofOfWork(hash, chaincodeInvocationSpec.nbits)
+}
+
+//SHA256(SHA256(CtorMsg + nonce)) < TARGET
+func CheckProofOfWork(hash *big.Int, nbits uint32) bool {
+	var pfNegative *bool
+	var pfOverflow *bool
+	target := nbits2target(nbits, pfNegative, pfOverflow)
+	//if(pfNegative || target == 0 || pfOverflow || target > ?)
+	result := hash.Cmp(target)
+	if result < 1 {
+		return true
+	}
+	return false
+}
+
+func GetHash(data []byte) *big.Int {
+	hash1 := sha256.Sum256(data)
+	hash := sha256.Sum256([]byte(hash1[:]))
+	hash256 := new(big.Int)
+	hash256.SetBytes(hash[:])
+	return hash256
+}
+
+func UintToArith256(nbits uint32) {
+
+}
+
+func nbits2target(nBits uint32, pfNegative *bool, pfOverflow *bool) *big.Int {
+	exponent := nBits >> 24
+	mantissa := nBits & 0x007fffff
+
+	var rtn *big.Int
+
+	if exponent <= 3 {
+		mantissa >>= uint(8 * (3 - exponent))
+		rtn = new(big.Int).SetUint64(uint64(mantissa))
+	} else {
+		rtn = new(big.Int).SetUint64(uint64(mantissa))
+		rtn.Lsh(rtn, uint(8*(exponent-3)))
+	}
+
+	*pfNegative = mantissa != 0 && (nBits&0x00800000) != 0
+
+	*pfOverflow = mantissa != 0 && ((exponent > 34) ||
+		(mantissa > 0xff && exponent > 33) ||
+		(mantissa > 0xffff && exponent > 32))
+
+	return rtn
+}
+
+//func nbits2targetStr(nBits uint32) string {
+//	var pfNegative *bool
+//	var pfOverflow *bool
+//	target := nbits2target(nBits, pfNegative, pfOverflow)
+//	targetStr := fmt.Sprintf("%064x", target)
+//	return "0x" + targetStr
+//}
 
 func main() {
 	err := shim.Start(new(SimpleChaincode))

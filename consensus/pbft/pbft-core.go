@@ -185,7 +185,7 @@ type msgID struct { // our index through certStore
 
 type msgCert struct {
 	digest      string
-	prePrepare  *PrePrepare
+	prePrepare  *PrePrepare //包含reqBatch
 	sentPrepare bool
 	prepare     []*Prepare
 	sentCommit  bool
@@ -337,7 +337,7 @@ func (instance *pbftCore) ProcessEvent(e events.Event) events.Event {
 			break
 		}
 		return next
-	case *RequestBatch:
+	case *RequestBatch: //共识的开始
 		err = instance.recvRequestBatch(et)
 	case *PrePrepare:
 		err = instance.recvPrePrepare(et)
