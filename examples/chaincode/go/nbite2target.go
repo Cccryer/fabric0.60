@@ -36,10 +36,11 @@ func nbits2targetStr(nBits uint32) string {
 	return "0x" + targetStr
 }
 
-func VerifyPowNonce() bool {
-	data1 := "helloworld!"
-	hash := GetHash([]byte(data1))
-	return CheckProofOfWork(hash, 0x1d00ffff)
+func VerifyPowNonce(nonce uint32, data []byte, nbits uint32) bool {
+
+	compact := fmt.Sprintf("%d%s", nonce, data)
+	hash := GetHash([]byte(compact))
+	return CheckProofOfWork(hash, nbits)
 }
 
 func CheckProofOfWork(hash *big.Int, nbits uint32) bool {
@@ -63,14 +64,31 @@ func GetHash(data []byte) *big.Int {
 	return hash256
 }
 
-func GetNonce(nbits uint32, data []byte) {
+func GetNonce(nbits uint32, data []byte) uint32 {
 	target := nbits2target(nbits)
+	fmt.Printf("target = 0x" + fmt.Sprintf("%064x", target) + "\n")
 	var nonce uint32
-
+	nonce = 0
+	compact := fmt.Sprintf("%d%s", nonce, data)
+	for GetHash([]byte(compact)).Cmp(target) > 0 {
+		fmt.Println(compact)
+		nonce++
+		compact = fmt.Sprintf("%d%s", nonce, data)
+		if nonce > 200 {
+			break
+		}
+	}
+	return nonce
 }
 
 func main() {
-	VerifyPowNonce()
-	result := nbits2targetStr(0x1d00ffff)
-	fmt.Println(result)
+	data1 := "helloworld!"
+	nonce := GetNonce(0x1d00ffff, []byte(data1))
+	flag := VerifyPowNonce(nonce, []byte(data1), 0x1d00ffff)
+	if flag {
+		fmt.Println("yes!\n")
+	}
+	fmt.Println("==============================================================")
+	//result := nbits2targetStr(0x1d00ffff)
+	//fmt.Println(result)
 }
