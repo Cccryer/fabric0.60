@@ -2,7 +2,9 @@ package main
 
 import (
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
+	"github.com/spf13/cobra"
 	"math/big"
 )
 
@@ -74,11 +76,37 @@ func GetNonce(nbits uint32, data []byte) uint32 {
 		fmt.Println(compact)
 		nonce++
 		compact = fmt.Sprintf("%d%s", nonce, data)
-		if nonce > 200 {
+		if nonce > 200 { //真要挖矿？
 			break
 		}
 	}
 	return nonce
+}
+
+type ChaincodeInput struct {
+	Args [][]byte `protobuf:"bytes,1,rep,name=args,proto3" json:"args,omitempty"`
+}
+
+var chaincodeCtorJSON string
+var testcmd = &cobra.Command{
+	Use:   "test",
+	Short: fmt.Sprintf("test"),
+	Run: func(cmd *cobra.Command, args []string) {
+		// 在这里访问chaincodeCtorJSON变量
+		fmt.Println("Constructor message:", chaincodeCtorJSON)
+		var input ChaincodeInput
+		if err := json.Unmarshal([]byte(chaincodeCtorJSON), &input); err != nil {
+			fmt.Printf("unmarshal error \n")
+		}
+		fmt.Println(input.Args)
+	},
+}
+
+func Cmd() *cobra.Command {
+	flags := testcmd.PersistentFlags()
+	flags.StringVarP(&chaincodeCtorJSON, "ctor", "c", "{}",
+		fmt.Sprintf("Constructor message for the %s in JSON format", "test"))
+	return testcmd
 }
 
 func main() {
@@ -91,4 +119,17 @@ func main() {
 	fmt.Println("==============================================================")
 	//result := nbits2targetStr(0x1d00ffff)
 	//fmt.Println(result)
+
+	rootCmd := &cobra.Command{Use: "myprogram"}
+	rootCmd.AddCommand(Cmd())
+
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+	}
+
+	//input := &pb.ChaincodeInput{}
+	//if err := json.Unmarshal([]byte(chaincodeCtorJSON), &input); err != nil {
+	//	fmt.Printf("unmarshal error \n")
+	//}
+
 }

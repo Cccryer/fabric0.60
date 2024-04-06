@@ -19,6 +19,9 @@ package main
 import (
 	"errors"
 	"fmt"
+	"github.com/golang/protobuf/proto"
+	pb "github.com/hyperledger/fabric/protos"
+	"github.com/op/go-logging"
 	"strconv"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
@@ -76,6 +79,45 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 	Aval = Aval - X
 	Bval = Bval + X
 	ts, err2 := stub.GetTxTimestamp()
+
+	payload, _ := stub.GetPayload()
+	fmt.Println("============================================================")
+	fmt.Println(payload)
+	chaincodeInvocationSpec := &pb.ChaincodeInvocationSpec{}
+	err = proto.Unmarshal(payload, chaincodeInvocationSpec)
+	fmt.Println("============================================================")
+	fmt.Println(chaincodeInvocationSpec)
+	fmt.Println("============================================================")
+	chaincodeSpec := &pb.ChaincodeSpec{}
+	err = proto.Unmarshal(payload, chaincodeSpec)
+	fmt.Println(chaincodeSpec)
+	fmt.Println("============================================================")
+	paystr := string(payload)
+	fmt.Println(paystr)
+	fmt.Println("============================================================")
+	var myLogger = logging.MustGetLogger("asset_mgm")
+
+	myLogger.Debugf("passed payload [% x]", payload)
+	fmt.Println("============================================================")
+	aargs := stub.GetArgs()
+	argstr := ""
+	for _, as := range aargs {
+		argstr += string(as)
+	}
+	fmt.Println(argstr)
+	fmt.Println("============================================================")
+	bindi, _ := stub.GetBinding()
+	fmt.Println(string(bindi))
+	fmt.Println("============================================================")
+	fmt.Println(stub.GetTxID())
+	fmt.Println("============================================================")
+	certt, _ := stub.GetCallerCertificate()
+	fmt.Println(string(certt))
+	fmt.Println("============================================================")
+	callmetadata, _ := stub.GetCallerMetadata()
+	fmt.Println(string(callmetadata))
+
+	fmt.Println("============================================================")
 	if err2 != nil {
 		fmt.Printf("Error getting transaction timestamp: %s", err2)
 	}

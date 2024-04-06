@@ -11,9 +11,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-	pb "github.com/hyperledger/fabric/protos"
 	"math/big"
 )
 
@@ -180,18 +178,11 @@ func GetDomainsByOwner(stub shim.ChaincodeStubInterface, args []string) ([]byte,
 	return domainList, nil
 }
 
-func VerifyPowNonce(stub shim.ChaincodeStubInterface, args []string) bool {
+func CheckTransaction(stub shim.ChaincodeStubInterface, args []string) bool {
 	payload, err := stub.GetPayload()
 	if err != nil {
 	}
-	chaincodeInvocationSpec := &pb.ChaincodeInvocationSpec{}
-	err = proto.Unmarshal(payload, chaincodeInvocationSpec)
-	if err != nil {
-	}
-	chaincodespec := chaincodeInvocationSpec.GetChaincodeSpec()
-	fmt.Println(chaincodespec)
-	fmt.Println(chaincodespec.GetCtorMsg())
-	params, err := json.Marshal(chaincodespec.CtorMsg)
+	payloadstr := string(payload)
 	if err != nil {
 	}
 	hash := GetHash(params)
