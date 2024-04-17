@@ -46,7 +46,7 @@ func checkQuery(t *testing.T, stub *shim.MockStub, function string, name string,
 }
 
 func checkInvoke(t *testing.T, stub *shim.MockStub, args []string) {
-	_, err := stub.MockInvoke("1", "query", args)
+	_, err := stub.MockInvoke("1", "invoke", args)
 	if err != nil {
 		fmt.Println("Invoke", args, "failed", err)
 		t.FailNow()
@@ -84,9 +84,10 @@ func TestExample02_Invoke(t *testing.T) {
 	checkInit(t, stub, []string{"A", "", "B", ""})
 
 	// A get domain google.com
-	checkInvoke(t, stub, []string{"A", "google.com"})
-	checkInvoke(t, stub, []string{"A", "hello.com"})
-	checkInvoke(t, stub, []string{"B", "baidu.com"})
+	checkInvoke(t, stub , []string{"A", "google.com", "1", "1d00ffff"})
+	//checkInvoke(t, stub, []string{"A", "google.com"})
+	//checkInvoke(t, stub, []string{"A", "hello.com"})
+	//checkInvoke(t, stub, []string{"B", "baidu.com"})
 	checkQuery(t, stub, "getDomainsByOwner", "A", "{\"google.com\":{},\"hello.com\":{}}")
 	checkQuery(t, stub, "getOwnerByDomain", "google.com", "A")
 

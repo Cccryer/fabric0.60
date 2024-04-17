@@ -22,14 +22,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var chaincodeInvokeNonce string //tx nonce
-/*
-tx nonce will be transformed to uint32 , it will hash with domain to get target
-*/
 
 func invokeCmd() *cobra.Command {
-	chaincodeInvokeCmd.PersistentFlags().StringVarP(&chaincodeInvokeNonce, "nonce", "n", "",
-		fmt.Sprintf("Nonce of transaction for safety"))
 	return chaincodeInvokeCmd
 }
 
@@ -37,7 +31,7 @@ var chaincodeInvokeCmd = &cobra.Command{
 	Use:   "invoke",
 	Short: fmt.Sprintf("Invoke the specified %s.", chainFuncName),
 	Long:  fmt.Sprintf(`Invoke the specified %s.`, chainFuncName),
-	//ValidArgs: []string{"1"},
+	ValidArgs: []string{"1"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return chaincodeInvoke(cmd, args)
 	},

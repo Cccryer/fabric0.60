@@ -114,7 +114,7 @@ func main() {
 	nonce := GetNonce(0x1d00ffff, []byte(data1))
 	flag := VerifyPowNonce(nonce, []byte(data1), 0x1d00ffff)
 	if flag {
-		fmt.Println("yes!\n")
+		fmt.Println("yes!")
 	}
 	fmt.Println("==============================================================")
 	//result := nbits2targetStr(0x1d00ffff)

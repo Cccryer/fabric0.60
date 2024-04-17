@@ -37,11 +37,7 @@ func getChaincodeSpecification(cmd *cobra.Command) (*pb.ChaincodeSpec, error) {
 	spec := &pb.ChaincodeSpec{}
 	if err := checkChaincodeCmdParams(cmd); err != nil {
 		return spec, err
-	}
-	if err := checkChaincodeInvokeCmdParams(cmd); err != nil {
-		return spec, err
-	}
-	// Build the spec
+	} // Build the spec
 	input := &pb.ChaincodeInput{}
 	if err := json.Unmarshal([]byte(chaincodeCtorJSON), &input); err != nil {
 		return spec, fmt.Errorf("Chaincode argument error: %s", err)
@@ -125,7 +121,6 @@ func chaincodeInvokeOrQuery(cmd *cobra.Command, args []string, invoke bool) (err
 
 	// Build the ChaincodeInvocationSpec message
 	invocation := &pb.ChaincodeInvocationSpec{ChaincodeSpec: spec}
-	invocation.pownonce = chaincodeInvokeNonce
 	if customIDGenAlg != common.UndefinedParamValue {
 		invocation.IdGenerationAlg = customIDGenAlg
 	}
@@ -211,14 +206,5 @@ func checkChaincodeCmdParams(cmd *cobra.Command) error {
 		}
 	}
 
-	return nil
-}
-
-func checkChaincodeInvokeCmdParams(cmd *cobra.Command) error {
-
-	//nonce合法性检查
-	if chaincodeInvokeNonce == common.UndefinedParamValue {
-		return fmt.Errorf("Must supply nonce(hash) for %s parameter.\n", "Invoke")
-	}
 	return nil
 }

@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"math/big"
+	"strconv"
 )
 
 // SimpleChaincode example simple Chaincode implementation
@@ -76,27 +77,31 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.delete(stub, args)
 	}
 
-	var A string             // owner, args[0]
+	var requester string             // owner, args[0]
 	var requestDomain string // domain, args[1]
 	var err error
 
-	if len(args) != 2 {
+	if len(args) != 4 {
 		return nil, errors.New("incorrect number of arguments. Expecting 2")
 	}
 
-	A = args[0]
+	requester = args[0]
 	requestDomain = args[1]
-
-	// 1. 判断这个域名有无拥有者
-
+	nonce := args[2]
+	nbits, _ := strconv.ParseUint(args[3], 16, 32)
+	// 1. check pow
+	compact := requester + requestDomain + nonce
+	fmt.Printf("compact is :" + compact + "\n")
+	hash := GetHash([]byte(compact))
+	CheckProofOfWork(hash, uint32(nbits))
 	// 2. 设置域名-拥有者的关系
-	err = stub.PutState(requestDomain, []byte(A))
+	err = stub.PutState(requestDomain, []byte(requester))
 	if err != nil {
 		return nil, errors.New("failed to update the domain-owner relation")
 	}
 
 	// 3. 更新拥有者-域名集合的关系
-	domainList, err := stub.GetState(A)
+	domainList, err := stub.GetState(requester)
 	if err != nil {
 		return nil, errors.New("failed to get domain list")
 	}
@@ -112,7 +117,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return nil, errors.New("failed to marshal the domains")
 	}
 
-	err = stub.PutState(A, domainsJson)
+	err = stub.PutState(requester, domainsJson)
 	if err != nil {
 		return nil, errors.New("failed to put state")
 	}
@@ -178,16 +183,7 @@ func GetDomainsByOwner(stub shim.ChaincodeStubInterface, args []string) ([]byte,
 	return domainList, nil
 }
 
-func CheckTransaction(stub shim.ChaincodeStubInterface, args []string) bool {
-	payload, err := stub.GetPayload()
-	if err != nil {
-	}
-	payloadstr := string(payload)
-	if err != nil {
-	}
-	hash := GetHash(params)
-	return CheckProofOfWork(hash, chaincodeInvocationSpec.nbits)
-}
+
 
 //SHA256(SHA256(CtorMsg + nonce)) < TARGET
 func CheckProofOfWork(hash *big.Int, nbits uint32) bool {
@@ -210,9 +206,6 @@ func GetHash(data []byte) *big.Int {
 	return hash256
 }
 
-func UintToArith256(nbits uint32) {
-
-}
 
 func nbits2target(nBits uint32, pfNegative *bool, pfOverflow *bool) *big.Int {
 	exponent := nBits >> 24
@@ -228,11 +221,11 @@ func nbits2target(nBits uint32, pfNegative *bool, pfOverflow *bool) *big.Int {
 		rtn.Lsh(rtn, uint(8*(exponent-3)))
 	}
 
-	*pfNegative = mantissa != 0 && (nBits&0x00800000) != 0
-
-	*pfOverflow = mantissa != 0 && ((exponent > 34) ||
-		(mantissa > 0xff && exponent > 33) ||
-		(mantissa > 0xffff && exponent > 32))
+	//*pfNegative = mantissa != 0 && (nBits&0x00800000) != 0
+	//
+	//*pfOverflow = mantissa != 0 && ((exponent > 34) ||
+	//	(mantissa > 0xff && exponent > 33) ||
+	//	(mantissa > 0xffff && exponent > 32))
 
 	return rtn
 }

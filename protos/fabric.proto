@@ -51,8 +51,6 @@ message Transaction {
     bytes toValidators = 10;
     bytes cert = 11;
     bytes signature = 12;
-    uint32 pownonce = 13;
-    uint32 nbits = 14;
 }
 
 // TransactionBlock carries a batch of transactions.

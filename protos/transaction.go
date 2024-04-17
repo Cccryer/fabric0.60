@@ -98,8 +98,6 @@ func NewChaincodeExecute(chaincodeInvocationSpec *ChaincodeInvocationSpec, uuid 
 	transaction.Txid = uuid
 	transaction.Timestamp = util.CreateUtcTimestamp()
 
-	transaction.pownonce = chaincodeInvocationSpec.pownonce
-
 	cID := chaincodeInvocationSpec.ChaincodeSpec.GetChaincodeID()
 	if cID != nil {
 		data, err := proto.Marshal(cID)
