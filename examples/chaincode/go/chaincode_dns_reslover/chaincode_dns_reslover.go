@@ -8,10 +8,10 @@ package main
 
 import (
 	"errors"
-	"github.com/hyperledger/fabric/core/chaincode/shim"
-	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/function"
-	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/myutils"
 	"fmt"
+	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/functions"
+	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/myutils"
 
 	"strings"
 )
@@ -30,9 +30,9 @@ const AddDomain = "add"
 
 func init() {
 	strategies = make(map[string]func(stub shim.ChaincodeStubInterface, args []string) ([]byte, error))
-	strategies[QueryResolveDomainIp] = function.ResolveDomain
-	strategies[DeleteDomain] = function.DeleteDomain
-	strategies[AddDomain] = function.AddDomain
+	strategies[QueryResolveDomainIp] = functions.ResolveDomain
+	strategies[DeleteDomain] = functions.DeleteDomain
+	strategies[AddDomain] = functions.AddDomain
 }
 
 // Init init the domain-ip relation
@@ -52,6 +52,8 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 			return nil, errors.New("input is invalid domain or ip")
 		}
 		// Write the state to the ledger
+		//record := myutils.BuildNewRecord(myutils.A, serverIp, 60, 0)
+		//recordJson, _ := json.Marshal(record)
 		err = stub.PutState(topLevelDomain, []byte(serverIp))
 		if err != nil {
 			return nil, errors.New("failed to update the domain-owner relation")
@@ -61,11 +63,13 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 }
 
 // Invoke update the domain-ip relation
-func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	if len(function) != 0 && strategies[function] != nil {
-		return strategies[function](stub, args)
+func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, functionName string, args []string) ([]byte, error) {
+	if len(functionName) != 0 && strategies[functionName] != nil {
+		//return functions.AddDomain(stub, args)
+		return functions.AddDomain(stub, args)
+		//return strategies[functionName](stub, args)
 	}
-	return myutils.BuildWrongResponse("unknown function name"), nil
+	return myutils.BuildWrongResponse("unknown functions name"), nil
 }
 
 // Query query the domain-ip relation
@@ -73,7 +77,7 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 	if len(function) != 0 && strategies[function] != nil {
 		return strategies[function](stub, args)
 	}
-	return myutils.BuildWrongResponse("unknown function name"), nil
+	return myutils.BuildWrongResponse("unknown functions name"), nil
 }
 
 func main() {

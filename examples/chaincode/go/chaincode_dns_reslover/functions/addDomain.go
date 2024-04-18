@@ -1,4 +1,4 @@
-package function
+package functions
 
 import (
 	"errors"
@@ -21,7 +21,7 @@ func AddDomain(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) 
 		return nil, errors.New("input is invalid domain")
 	}
 	topLevelDomain, err := myutils.GetTopLevelDomain(domain)
-	if err != nil {
+	if err != nil || len(topLevelDomain) == 0 {
 		return nil, errors.New("failed to get top level domain")
 	}
 	if err := stub.PutState(topLevelDomain, []byte(authorityServer)); err != nil {

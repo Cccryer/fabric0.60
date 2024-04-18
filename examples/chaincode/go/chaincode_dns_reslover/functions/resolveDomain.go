@@ -1,10 +1,9 @@
-package function
+package functions
 
 import (
 	"errors"
-	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/myutils"
-
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/myutils"
 )
 
 // ResolveDomain 通过域名获取权威域名服务器地址

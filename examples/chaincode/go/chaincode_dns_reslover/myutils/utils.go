@@ -6,6 +6,7 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type ResponseCode int
@@ -15,13 +16,13 @@ const (
 	Failed
 )
 
-type RecordType int
+type RecordType string
 
 const (
-	A RecordType = iota
-	MX
-	CNAME
-	TXT
+	A     RecordType = "A"
+	MX    RecordType = "MX"
+	CNAME RecordType = "CNAME"
+	TXT   RecordType = "TXT"
 )
 
 type Record struct {
@@ -56,7 +57,7 @@ func CheckValidDomain(domain string) bool {
 	if domain == "" {
 		return false
 	}
-	urlRegex := `^(http|https):\/\/[^\s/$.?#].[^\s]*$`
+	urlRegex := `^((http|https):\/\/)?[^\s/$.?#].[^\s]*$`
 	match, _ := regexp.MatchString(urlRegex, domain)
 	return match
 }
@@ -90,4 +91,18 @@ func BuildResponse(status bool, message string, data map[string]string) []byte {
 }
 func BuildWrongResponse(message string) []byte {
 	return BuildResponse(false, message, nil)
+}
+
+// BuildNewRecord 新建记录
+func BuildNewRecord(recordType RecordType, value string, ttl int64, createAt int64) Record {
+	if createAt == 0 {
+		createAt = time.Now().Unix()
+	}
+	return Record{
+		Type:      recordType,
+		Value:     value,
+		TTL:       ttl,
+		CreatedAt: createAt,
+		UpdateAt:  time.Now().Unix(),
+	}
 }

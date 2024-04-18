@@ -77,7 +77,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.delete(stub, args)
 	}
 
-	var requester string             // owner, args[0]
+	var requester string     // owner, args[0]
 	var requestDomain string // domain, args[1]
 	var err error
 
@@ -146,7 +146,7 @@ func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string
 func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 
 	if len(function) == 0 || strategies[function] == nil {
-		return nil, errors.New("invalid query function name. Expecting \"query\"")
+		return nil, errors.New("invalid query functions name. Expecting \"query\"")
 	}
 	if len(args) != 1 {
 		return nil, errors.New("incorrect number of arguments, Expecting 1 args")
@@ -183,8 +183,6 @@ func GetDomainsByOwner(stub shim.ChaincodeStubInterface, args []string) ([]byte,
 	return domainList, nil
 }
 
-
-
 //SHA256(SHA256(CtorMsg + nonce)) < TARGET
 func CheckProofOfWork(hash *big.Int, nbits uint32) bool {
 	var pfNegative *bool
@@ -205,7 +203,6 @@ func GetHash(data []byte) *big.Int {
 	hash256.SetBytes(hash[:])
 	return hash256
 }
-
 
 func nbits2target(nBits uint32, pfNegative *bool, pfOverflow *bool) *big.Int {
 	exponent := nBits >> 24
