@@ -60,7 +60,7 @@ func TestExample02_Init(t *testing.T) {
 	//checkInit(t, stub, []string{"A", "", "B", ""})
 	checkInit(t, stub, []string{"com:1.1.1.1", "cn:1.1.1.2"})
 
-	checkState(t, stub, "A", "{}")
+	checkState(t, stub, "com", "{}")
 	checkState(t, stub, "B", "{}")
 }
 

@@ -8,10 +8,11 @@ package main
 
 import (
 	"errors"
-	"fabric/fabric-pbft-domain-system/examples/chaincode/go/chaincode_dns_reslover/function"
-	"fabric/fabric-pbft-domain-system/examples/chaincode/go/chaincode_dns_reslover/myutils"
-	"fmt"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/function"
+	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/myutils"
+	"fmt"
+
 	"strings"
 )
 

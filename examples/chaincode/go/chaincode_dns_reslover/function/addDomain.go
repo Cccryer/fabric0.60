@@ -2,7 +2,8 @@ package function
 
 import (
 	"errors"
-	"fabric/fabric-pbft-domain-system/examples/chaincode/go/chaincode_dns_reslover/myutils"
+	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/myutils"
+
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"strconv"
 )
