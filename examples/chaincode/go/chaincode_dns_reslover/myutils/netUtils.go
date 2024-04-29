@@ -2,7 +2,7 @@ package myutils
 
 import (
 	"fmt"
-	"github.com/miekg/dns"
+	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/miekg/dns"
 )
 
 // DnsLookup 根据指定的DNS服务器查询相应的IP地址
