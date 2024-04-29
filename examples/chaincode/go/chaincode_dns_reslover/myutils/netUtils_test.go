@@ -17,7 +17,7 @@ func TestLookup(t *testing.T) {
 }
 
 func TestParseDomainName(t *testing.T) {
-	lookup, err := DnsLookup("baidu.com", "192.5.6.30")
+	lookup, err := DnsLookup("tans.fun", "192.5.6.30")
 	if err != nil {
 		return
 	}
