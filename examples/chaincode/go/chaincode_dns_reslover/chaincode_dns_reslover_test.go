@@ -73,7 +73,7 @@ func TestExample02_Query(t *testing.T) {
 	// Query A
 	checkQuery(t, stub, "resolveDomain", "google.com", "1.1.1.1")
 	checkQuery(t, stub, "resolveDomain", "google.cn", "1.1.1.2")
-	// Query B
+
 }
 
 func TestExample02_Invoke(t *testing.T) {
