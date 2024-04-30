@@ -8,10 +8,10 @@ package main
 
 import (
 	"crypto/sha256"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric/core/util"
 	"math/big"
 	"strconv"
 )
@@ -27,6 +27,10 @@ var strategies map[string]func(stub shim.ChaincodeStubInterface, args []string) 
 
 const QUERY_OWNER_BY_DOMAIN = "getOwnerByDomain"
 const QUERY_DOMAINS_BY_OWNER = "getDomainsByOwner"
+const QueryResolveDomainIp = "resolveDomain"
+
+const NBITES = "1d00ffff"
+const DNS_RESLOVER_CHAINCODE = "xxxxx"
 
 func init() {
 	strategies = make(map[string]func(stub shim.ChaincodeStubInterface, args []string) ([]byte, error))
@@ -35,37 +39,6 @@ func init() {
 }
 
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
-	var A, B string    // Entities
-	var Aval, Bval set // Asset holdings
-	var err error
-
-	if len(args) != 4 {
-		return nil, errors.New("Incorrect number of arguments. Expecting 2")
-	}
-
-	// Initialize the chaincode
-	A = args[0]
-	Aval = make(set)
-	B = args[2]
-	Bval = make(set)
-
-	// map2json
-	AvalStr, _ := json.Marshal(Aval)
-	BvalStr, _ := json.Marshal(Bval)
-
-	// Write the state to the ledger
-	err = stub.PutState(A, AvalStr)
-	//err = stub.PutState()
-	if err != nil {
-		fmt.Printf("put state error")
-		return nil, err
-	}
-
-	err = stub.PutState(B, BvalStr)
-	if err != nil {
-		fmt.Printf("put state error")
-		return nil, err
-	}
 
 	return nil, nil
 }
@@ -77,50 +50,67 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return t.delete(stub, args)
 	}
 
-	var requester string     // owner, args[0]
+	var requestIP string     // owner, args[0]
 	var requestDomain string // domain, args[1]
+	var nonce string         // nonce args[2]
 	var err error
 
-	if len(args) != 4 {
+	if len(args) != 3 {
 		return nil, errors.New("incorrect number of arguments. Expecting 2")
 	}
-
-	requester = args[0]
+	//Args =["ip", "domain", "nonce"]
+	requestIP = args[0]
 	requestDomain = args[1]
-	nonce := args[2]
-	nbits, _ := strconv.ParseUint(args[3], 16, 32)
+	nonce = args[2]
+	nbits, _ := strconv.ParseUint(NBITES, 16, 32)
+
 	// 1. check pow
-	compact := requester + requestDomain + nonce
+	compact := requestIP + requestDomain + nonce
 	fmt.Printf("compact is :" + compact + "\n")
 	hash := GetHash([]byte(compact))
 	CheckProofOfWork(hash, uint32(nbits))
-	// 2. 设置域名-拥有者的关系
-	err = stub.PutState(requestDomain, []byte(requester))
-	if err != nil {
-		return nil, errors.New("failed to update the domain-owner relation")
-	}
 
-	// 3. 更新拥有者-域名集合的关系
-	domainList, err := stub.GetState(requester)
-	if err != nil {
-		return nil, errors.New("failed to get domain list")
-	}
-	var domains set
-	err = json.Unmarshal(domainList, &domains)
-	if err != nil {
-		return nil, errors.New("failed to unmarshal the domain list")
-	}
-	var member void
-	domains[requestDomain] = member
-	domainsJson, err := json.Marshal(domains)
-	if err != nil {
-		return nil, errors.New("failed to marshal the domains")
-	}
+	// 2. get chaincode id
 
-	err = stub.PutState(requester, domainsJson)
+	chaincodeToCall := GetChaincodeToCall()
+	// 3. to chaincode
+	f := "invoke"
+	invokeArgs := util.ToChaincodeArgs(f, requestIP, requestDomain)
+	response, err := stub.InvokeChaincode(chaincodeToCall, invokeArgs)
 	if err != nil {
-		return nil, errors.New("failed to put state")
+		errStr := fmt.Sprintf("Failed to invoke chaincode. Got error: %s", err.Error())
+		fmt.Printf(errStr)
+		return nil, errors.New(errStr)
 	}
+	fmt.Printf("Invoke chaincode successful. Got response %s", string(response))
+	//// 2. 设置域名-拥有者的关系
+	////to dns_reslover chaincode
+	//err = stub.PutState(requestDomain, []byte(requester))
+	//if err != nil {
+	//	return nil, errors.New("failed to update the domain-owner relation")
+	//}
+	//
+	//// 3. 更新拥有者-域名集合的关系
+	//domainList, err := stub.GetState(requester)
+	//if err != nil {
+	//	return nil, errors.New("failed to get domain list")
+	//}
+	//var domains set
+	//err = json.Unmarshal(domainList, &domains)
+	//if err != nil {
+	//	return nil, errors.New("failed to unmarshal the domain list")
+	//}
+	//var member void
+	//domains[requestDomain] = member
+	//domainsJson, err := json.Marshal(domains)
+	//if err != nil {
+	//	return nil, errors.New("failed to marshal the domains")
+	//}
+	//
+	//err = stub.PutState(requester, domainsJson)
+	//if err != nil {
+	//	return nil, errors.New("failed to put state")
+	//}
 
 	return nil, nil
 }
@@ -161,19 +151,40 @@ func (t *SimpleChaincode) Query(stub shim.ChaincodeStubInterface, function strin
 
 }
 
+//
+func GetChaincodeToCall() string {
+	//is dns_reslover chaincode id
+	chainCodeToCall := DNS_RESLOVER_CHAINCODE
+	return chainCodeToCall
+}
+
+func ToChaincodeArgs(args ...string) [][]byte {
+	bargs := make([][]byte, len(args))
+	for i, arg := range args {
+		bargs[i] = []byte(arg)
+	}
+	return bargs
+}
+
 // GetOwnerByDomain 通过域名获取用户名
 func GetOwnerByDomain(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+
+	//1. query ip by domain
 	domain := args[0]
-	owner, err := stub.GetState(domain)
+	chaincodeToCall := GetChaincodeToCall()
+	f := QueryResolveDomainIp
+	queryArgs := util.ToChaincodeArgs(f, domain)
+	response, err := stub.QueryChaincode(chaincodeToCall, queryArgs)
 	if err != nil {
 		jsonResp := "{\"Error\":\"failed to get owner by domain-" + domain + "\"}"
 		return nil, errors.New(jsonResp)
 	}
-	return owner, nil
+	return response, nil
 }
 
 // GetDomainsByOwner 通过用户名获取域名集合
 func GetDomainsByOwner(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
+	//TODO: query domain by ip or username
 	owner := args[0]
 	domainList, err := stub.GetState(owner)
 	if err != nil {
