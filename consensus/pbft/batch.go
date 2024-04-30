@@ -140,10 +140,10 @@ func (op *obcBatch) Close() {
 func (op *obcBatch) submitToLeader(req *Request) events.Event {
 	// Broadcast the request to the network, in case we're in the wrong view
 	//从客户端或者nvp收到的请求
-	if !op.pbft.byzantine {
-		op.broadcastMsg(&BatchMessage{Payload: &BatchMessage_Request{Request: req}})
-	}
-	//op.broadcastMsg(&BatchMessage{Payload: &BatchMessage_Request{Request: req}})
+	//if !op.pbft.byzantine {
+	//	op.broadcastMsg(&BatchMessage{Payload: &BatchMessage_Request{Request: req}})
+	//}
+	op.broadcastMsg(&BatchMessage{Payload: &BatchMessage_Request{Request: req}})
 	op.logAddTxFromRequest(req)
 	op.reqStore.storeOutstanding(req)
 	op.startTimerIfOutstandingRequests()
