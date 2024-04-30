@@ -83,34 +83,6 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		return nil, errors.New(errStr)
 	}
 	fmt.Printf("Invoke chaincode successful. Got response %s", string(response))
-	//// 2. 设置域名-拥有者的关系
-	////to dns_reslover chaincode
-	//err = stub.PutState(requestDomain, []byte(requester))
-	//if err != nil {
-	//	return nil, errors.New("failed to update the domain-owner relation")
-	//}
-	//
-	//// 3. 更新拥有者-域名集合的关系
-	//domainList, err := stub.GetState(requester)
-	//if err != nil {
-	//	return nil, errors.New("failed to get domain list")
-	//}
-	//var domains set
-	//err = json.Unmarshal(domainList, &domains)
-	//if err != nil {
-	//	return nil, errors.New("failed to unmarshal the domain list")
-	//}
-	//var member void
-	//domains[requestDomain] = member
-	//domainsJson, err := json.Marshal(domains)
-	//if err != nil {
-	//	return nil, errors.New("failed to marshal the domains")
-	//}
-	//
-	//err = stub.PutState(requester, domainsJson)
-	//if err != nil {
-	//	return nil, errors.New("failed to put state")
-	//}
 
 	return nil, nil
 }

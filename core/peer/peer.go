@@ -626,9 +626,11 @@ func (p *Impl) handleChat(ctx context.Context, stream ChatStream, initiatedStrea
 func (p *Impl) ExecuteTransaction(transaction *pb.Transaction) (response *pb.Response) {
 	if p.isValidator {
 		//vp节点进行共识
+		//直接vp调用还是nvp发送过来都会首先进入这里
 		response = p.sendTransactionsToLocalEngine(transaction)
 	} else {
 		//nvp节点校验交易，将交易转发给vp节点
+		//使用nvp充当客户端，改成广播
 		peerAddresses := p.discHelper.GetRandomNodes(1)
 		response = p.SendTransactionsToPeer(peerAddresses[0], transaction)
 	}

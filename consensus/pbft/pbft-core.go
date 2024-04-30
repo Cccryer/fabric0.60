@@ -1299,6 +1299,7 @@ func (instance *pbftCore) innerBroadcast(msg *Message) error {
 	}
 
 	// testing byzantine fault.
+	// 随机广播
 	if doByzantine {
 		rand2 := rand.New(rand.NewSource(time.Now().UnixNano()))
 		ignoreidx := rand2.Intn(instance.N)

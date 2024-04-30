@@ -17,7 +17,10 @@ limitations under the License.
 package pbft
 
 import (
+	"crypto/sha256"
 	"fmt"
+	"math/big"
+	"strconv"
 	"time"
 
 	"github.com/hyperledger/fabric/consensus"
@@ -136,8 +139,11 @@ func (op *obcBatch) Close() {
 
 func (op *obcBatch) submitToLeader(req *Request) events.Event {
 	// Broadcast the request to the network, in case we're in the wrong view
-	//这里从客户端收到不应认为会作恶，此广播一定发生
-	op.broadcastMsg(&BatchMessage{Payload: &BatchMessage_Request{Request: req}})
+	//从客户端或者nvp收到的请求
+	if !op.pbft.byzantine {
+		op.broadcastMsg(&BatchMessage{Payload: &BatchMessage_Request{Request: req}})
+	}
+	//op.broadcastMsg(&BatchMessage{Payload: &BatchMessage_Request{Request: req}})
 	op.logAddTxFromRequest(req)
 	op.reqStore.storeOutstanding(req)
 	op.startTimerIfOutstandingRequests()
@@ -214,25 +220,103 @@ func (op *obcBatch) execute(seqNo uint64, reqBatch *RequestBatch) {
 	op.stack.Execute(meta, txs) // This executes in the background, we will receive an executedEvent once it completes
 }
 
+//====================================================================================
+//                            FOR  BYZANTINE
+//====================================================================================
+func nbits2target(nBits uint32) *big.Int {
+	exponent := nBits >> 24
+	mantissa := nBits & 0x007fffff
+
+	var rtn *big.Int
+
+	if exponent <= 3 {
+		mantissa >>= uint(8 * (3 - exponent))
+		rtn = new(big.Int).SetUint64(uint64(mantissa))
+	} else {
+		rtn = new(big.Int).SetUint64(uint64(mantissa))
+		rtn.Lsh(rtn, uint(8*(exponent-3)))
+	}
+
+	//判断负数和溢出
+	//pfNegative := mantissa != 0 && (nBits&0x00800000) != 0
+	//
+	//pfOverflow := mantissa != 0 && ((exponent > 34) ||
+	//	(mantissa > 0xff && exponent > 33) ||
+	//	(mantissa > 0xffff && exponent > 32))
+
+	return rtn
+}
+func getHash(data []byte) *big.Int {
+	hash1 := sha256.Sum256(data)
+	hash := sha256.Sum256([]byte(hash1[:]))
+	hash256 := new(big.Int)
+	hash256.SetBytes(hash[:])
+
+	hash256str := fmt.Sprintf("%064x", hash256)
+	fmt.Printf("0x" + hash256str + "\n")
+	return hash256
+}
+func getNonce(nbits uint32, domain string, byzantineIP string) uint32 {
+	target := nbits2target(nbits)
+	fmt.Printf("target = 0x" + fmt.Sprintf("%064x", target) + "\n")
+	var nonce uint32
+	data := []byte(byzantineIP + domain)
+	nonce = 0
+	compact := fmt.Sprintf("%d%s", nonce, data)
+	for getHash([]byte(compact)).Cmp(target) > 0 {
+		fmt.Println(compact)
+		nonce++
+		compact = fmt.Sprintf("%d%s", nonce, data)
+		if nonce > 200 { //真要挖矿？
+			break
+		}
+	}
+	return nonce
+}
+func makeTx(nonce uint32, domain string, ip string) (pb.Transaction, error) {
+	tx := pb.Transaction{}
+	return tx, nil
+}
+
+//====================================================================================
+//                            FOR  BYZANTINE
+//====================================================================================
+
 // =============================================================================
 // functions specific to batch mode
 // =============================================================================
-
 func (op *obcBatch) leaderProcReq(req *Request) events.Event {
 	// XXX check req sig
+	//主节点作恶处
+	if op.pbft.byzantine {
+		digest := hash(req)
+		logger.Debugf("Batch primary %d queueing new request %s", op.pbft.id, digest)
+		//此时可能发生恶意替换
+
+		txbyte := req.Payload
+		var tx pb.Transaction
+		err := proto.Unmarshal(txbyte, &tx)
+		if err != nil {
+			logger.Debugf("try to byzantine, but can't unmarshal tx")
+		}
+		fmt.Println("tx is ", tx)
+		//get domain and nbits
+		nbits, err := strconv.ParseUint("1d00ffff", 16, 32)
+		domain := string(tx.Payload)
+		//get nonce
+		byzantineIP := "7.7.7.7"
+		nonce := getNonce(uint32(nbits), domain, byzantineIP)
+		//make tx and broadcast?
+		byzantineTx, err := makeTx(nonce, domain, byzantineIP)
+
+		reqPayload, err := proto.Marshal(&byzantineTx)
+		if err != nil {
+			return nil
+		}
+		req = op.txToReq(reqPayload)
+	}
 	digest := hash(req)
 	logger.Debugf("Batch primary %d queueing new request %s", op.pbft.id, digest)
-
-	//此时可能发生恶意替换
-	//_tx := &pb.Transaction{
-	////...
-	//}
-	//_payload, err := proto.Marshal(_tx)
-	//if err != nil {
-	//	return nil
-	//}
-	//_req := op.txToReq(_payload)
-	//op.batchStore = append(op.batchStore, _req)
 
 	op.batchStore = append(op.batchStore, req)
 	op.reqStore.storePending(req)
