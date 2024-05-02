@@ -74,7 +74,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 
 	chaincodeToCall := GetChaincodeToCall()
 	// 3. to chaincode
-	f := "invoke"
+	f := "add"
 	invokeArgs := util.ToChaincodeArgs(f, requestIP, requestDomain)
 	response, err := stub.InvokeChaincode(chaincodeToCall, invokeArgs)
 	if err != nil {
@@ -82,6 +82,7 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, function stri
 		fmt.Printf(errStr)
 		return nil, errors.New(errStr)
 	}
+	//4. delete
 	fmt.Printf("Invoke chaincode successful. Got response %s", string(response))
 
 	return nil, nil

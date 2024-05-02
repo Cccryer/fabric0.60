@@ -24,3 +24,25 @@ func TestParseDomainName(t *testing.T) {
 	fmt.Println(lookup)
 
 }
+
+func TestSendUpdate(t *testing.T) {
+	type args struct {
+		domain    string
+		ip        string
+		dnsServer string
+		dnsPort   string
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		// TODO: Add test cases.
+		{name: "test insert", args{domain: "google.com", ip: "1.1.1.1", dnsServer: "127.0.0.1", dnsPort: "30053"}},
+		{n},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			SendUpdate(tt.args.domain, tt.args.ip, tt.args.dnsServer, tt.args.dnsPort)
+		})
+	}
+}

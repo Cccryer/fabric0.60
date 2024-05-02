@@ -30,3 +30,18 @@ func DnsLookup(domain string, dnsServer string) ([]string, error) {
 	}
 	return ips, nil
 }
+
+// SendUpdate 构造 DNS 更新命令，更新记录
+func SendUpdate(domain string, ip string, dnsServer string, dnsPort string) {
+	var m dns.Msg
+	m.SetUpdate(domain)
+
+	var newRRs []dns.RR
+	record := fmt.Sprintf("%s 60 IN A %s", domain, ip)
+	rr, _ := dns.NewRR(record)
+	newRRs = append(newRRs, rr)
+	m.Insert(newRRs)
+	var client dns.Client
+	res1, res2, err := client.Exchange(&m, fmt.Sprintf("%s:%s", dnsServer, dnsPort))
+	fmt.Println(res1, res2, err)
+}
