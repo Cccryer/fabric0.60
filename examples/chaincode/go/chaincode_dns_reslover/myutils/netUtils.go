@@ -2,17 +2,17 @@ package myutils
 
 import (
 	"fmt"
-	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/miekg/dns"
+	"github.com/miekg/dns"
 )
 
 // DnsLookup 根据指定的DNS服务器查询相应的IP地址
-func DnsLookup(domain string, dnsServer string) ([]string, error) {
+func DnsLookup(domain string, dnsServer string, dnsPort string) ([]string, error) {
 	c := new(dns.Client)
 	m := new(dns.Msg)
 	m.SetQuestion(dns.Fqdn(domain), dns.TypeA)
 	m.RecursionDesired = true
 
-	r, _, err := c.Exchange(m, dnsServer+":53")
+	r, _, err := c.Exchange(m, dnsServer+":"+dnsPort)
 
 	if err != nil {
 		return nil, err
@@ -34,10 +34,10 @@ func DnsLookup(domain string, dnsServer string) ([]string, error) {
 // SendUpdate 构造 DNS 更新命令，更新记录
 func SendUpdate(domain string, ip string, dnsServer string, dnsPort string) {
 	var m dns.Msg
-	m.SetUpdate(domain)
+	m.SetUpdate("com.")
 
 	var newRRs []dns.RR
-	record := fmt.Sprintf("%s 60 IN A %s", domain, ip)
+	record := fmt.Sprintf("%s 86400 IN A %s", dns.Fqdn(domain), ip)
 	rr, _ := dns.NewRR(record)
 	newRRs = append(newRRs, rr)
 	m.Insert(newRRs)

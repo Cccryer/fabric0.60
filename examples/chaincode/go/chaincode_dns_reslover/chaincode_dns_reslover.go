@@ -12,7 +12,6 @@ import (
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/functions"
 	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/myutils"
-
 	"strings"
 )
 
@@ -40,7 +39,6 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 
 	var topLevelDomain, serverIp string
 	var err error
-
 	for _, arg := range args {
 		pairs := strings.Split(arg, ":")
 		if len(pairs) != 2 {

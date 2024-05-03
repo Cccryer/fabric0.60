@@ -17,12 +17,11 @@ func TestLookup(t *testing.T) {
 }
 
 func TestParseDomainName(t *testing.T) {
-	lookup, err := DnsLookup("tans.fun", "192.5.6.30")
+	lookup, err := DnsLookup("example.com", "127.0.0.1", "30054")
 	if err != nil {
 		return
 	}
 	fmt.Println(lookup)
-
 }
 
 func TestSendUpdate(t *testing.T) {
@@ -36,9 +35,15 @@ func TestSendUpdate(t *testing.T) {
 		name string
 		args args
 	}{
-		// TODO: Add test cases.
-		{name: "test insert", args{domain: "google.com", ip: "1.1.1.1", dnsServer: "127.0.0.1", dnsPort: "30053"}},
-		{n},
+		{
+			name: "test insert",
+			args: args{
+				domain:    "abc.google.com",
+				ip:        "1.1.1.2",
+				dnsServer: "127.0.0.1",
+				dnsPort:   "30054",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
