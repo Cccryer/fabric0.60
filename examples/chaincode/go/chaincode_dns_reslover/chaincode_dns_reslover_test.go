@@ -40,7 +40,7 @@ func checkQuery(t *testing.T, stub *shim.MockStub, function string, name string,
 		}
 	}
 	if string(bytes) != value {
-		fmt.Println("Query value", name, "was not", value, "as expected")
+		fmt.Println("Query value", name, "was not", value, "as expected", "the actual value is", string(bytes))
 		t.FailNow()
 	}
 }
@@ -60,8 +60,8 @@ func TestExample02_Init(t *testing.T) {
 	//checkInit(t, stub, []string{"A", "", "B", ""})
 	checkInit(t, stub, []string{"com:1.1.1.1", "cn:1.1.1.2"})
 
-	checkState(t, stub, "com", "1.1.1.1")
-	checkState(t, stub, "cn", "1.1.1.2")
+	checkState(t, stub, "com", "1.1.1.1:53")
+	checkState(t, stub, "cn", "1.1.1.2:53")
 }
 
 func TestExample02_Query(t *testing.T) {
@@ -69,11 +69,39 @@ func TestExample02_Query(t *testing.T) {
 	stub := shim.NewMockStub("ex10", scc)
 
 	// Init A have no domain, B have no domain
-	checkInit(t, stub, []string{"com:1.1.1.1", "cn:1.1.1.2"})
+	checkInit(t, stub, []string{"com:1.1.1.1:53", "cn:1.1.1.2:53"})
 	// Query A
-	checkQuery(t, stub, "resolveDomain", "google.com", "1.1.1.1")
-	checkQuery(t, stub, "resolveDomain", "google.cn", "1.1.1.2")
+	checkQuery(t, stub, "TopLevelQuest", "google.com", "1.1.1.1:53")
+	checkQuery(t, stub, "TopLevelQuest", "google.cn", "1.1.1.2:53")
 
+}
+
+// TestExample03_UpdateSimpleDomain 测试插入删除
+func TestExample04_UpdateSimpleDomain(t *testing.T) {
+	scc := new(SimpleChaincode)
+	stub := shim.NewMockStub("simpleDomainQuest Test", scc)
+
+	// Init A have no domain, B have no domain
+	checkInit(t, stub, []string{"com:127.0.0.1:30054", "cn:127.0.0.1:30054"})
+	// Query A
+	checkInvoke(t, stub, "delete", []string{"xxx.google.com"})
+	checkInvoke(t, stub, "update", []string{"xxx.google.com", "2.2.2.2"})
+	checkInvoke(t, stub, "update", []string{"xxx.google.com", "2.2.2.3"})
+	checkQuery(t, stub, "resolve", "xxx.google.com", "2.2.2.2,2.2.2.3")
+}
+
+func TestExample05_DeleteSimpleDomain(t *testing.T) {
+	scc := new(SimpleChaincode)
+	stub := shim.NewMockStub("simpleDomainDelete Test", scc)
+
+	// Init A have no domain, B have no domain
+	checkInit(t, stub, []string{"com:127.0.0.1:30054", "cn:127.0.0.1:30054"})
+	// Query A
+	checkInvoke(t, stub, "update", []string{"xxx.google.com", "2.2.2.2"})
+	checkInvoke(t, stub, "update", []string{"xxx.google.com", "2.2.2.3"})
+	checkInvoke(t, stub, "delete", []string{"xxx.google.com"})
+	checkInvoke(t, stub, "update", []string{"xxx.google.com", "2.2.2.4"})
+	checkQuery(t, stub, "resolve", "xxx.google.com", "2.2.2.4")
 }
 
 func TestExample02_Invoke(t *testing.T) {

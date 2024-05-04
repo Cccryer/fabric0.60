@@ -23,15 +23,27 @@ type ResponseCode int
 // strategies 用于存储查询策略
 var strategies map[string]func(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
 
-const QueryResolveDomainIp = "resolveDomain"
-const DeleteDomain = "delete"
-const AddDomain = "add"
+const SimpleDomainQuest = "resolve"
+const SimpleDomainUpdate = "update"
+const SimpleDomainDelete = "delete"
+
+const TopLevelUpdate = "TopLevelUpdate"
+const TopLevelQuest = "TopLevelQuest"
+const TopLevelDelete = "TopLevelDelete"
 
 func init() {
 	strategies = make(map[string]func(stub shim.ChaincodeStubInterface, args []string) ([]byte, error))
-	strategies[QueryResolveDomainIp] = functions.ResolveDomain
-	strategies[DeleteDomain] = functions.DeleteDomain
-	strategies[AddDomain] = functions.AddDomain
+
+	// 非顶级域名操作
+	strategies[SimpleDomainQuest] = functions.SimpleDomainResolve
+	strategies[SimpleDomainDelete] = functions.SimpleDomainDelete
+	strategies[SimpleDomainUpdate] = functions.SimpleDomainUpdate
+
+	// 顶级域名操作
+	strategies[TopLevelQuest] = functions.TopLevelDomainResolve
+	strategies[TopLevelUpdate] = functions.TopLevelDomainUpdate
+	strategies[TopLevelDelete] = functions.TopLevelDomainDelete
+
 }
 
 // Init init the domain-ip relation
@@ -41,11 +53,16 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 	var err error
 	for _, arg := range args {
 		pairs := strings.Split(arg, ":")
-		if len(pairs) != 2 {
+		if len(pairs) != 3 && len(pairs) != 2 {
 			return nil, errors.New("incorrect number of arguments. Expecting 2")
 		}
 		topLevelDomain = pairs[0]
 		serverIp = pairs[1]
+		if len(pairs) == 2 {
+			serverIp = pairs[1] + ":53"
+		} else {
+			serverIp = pairs[1] + ":" + pairs[2]
+		}
 		if topLevelDomain == "" || !myutils.CheckValidIp(serverIp) {
 			return nil, errors.New("input is invalid domain or ip")
 		}
@@ -63,9 +80,7 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 // Invoke update the domain-ip relation
 func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface, functionName string, args []string) ([]byte, error) {
 	if len(functionName) != 0 && strategies[functionName] != nil {
-		//return functions.AddDomain(stub, args)
-		return functions.AddDomain(stub, args)
-		//return strategies[functionName](stub, args)
+		return strategies[functionName](stub, args)
 	}
 	return myutils.BuildWrongResponse("unknown functions name"), nil
 }
