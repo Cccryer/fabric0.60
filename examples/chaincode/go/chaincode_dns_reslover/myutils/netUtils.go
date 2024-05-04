@@ -2,7 +2,7 @@ package myutils
 
 import (
 	"fmt"
-	"github.com/miekg/dns"
+	"github.com/TanYongF/dns"
 )
 
 const (
