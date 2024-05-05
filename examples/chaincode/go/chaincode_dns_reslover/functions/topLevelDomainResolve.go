@@ -3,6 +3,7 @@ package functions
 import (
 	"errors"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/common"
 	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/myutils"
 )
 
@@ -20,12 +21,15 @@ func TopLevelDomainResolve(stub shim.ChaincodeStubInterface, args []string) ([]b
 	if err != nil {
 		return nil, errors.New("failed to get top level domain")
 	}
-	authorityServer, err := stub.GetState(topLevelDomain)
+	tableRecord, err := common.GetRecordByKey(stub, topLevelDomain)
+	if err != nil {
+		return nil, errors.New("failed to get record")
+	}
 	if err != nil {
 		jsonResp := "{\"Error\":\"failed to resolver domain list by owner" + domain + "\"}"
 		return nil, errors.New(jsonResp)
 	}
 	return myutils.BuildResponse(true, "", map[string]interface{}{
-		"authorityServer": string(authorityServer),
+		"record": tableRecord,
 	}), nil
 }

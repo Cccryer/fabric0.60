@@ -10,9 +10,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
+	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/common"
 	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/functions"
 	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/myutils"
 	"strings"
+	"time"
 )
 
 // SimpleChaincode example simple Chaincode implementation
@@ -30,6 +32,7 @@ const SimpleDomainDelete = "delete"
 const TopLevelUpdate = "TopLevelUpdate"
 const TopLevelQuest = "TopLevelQuest"
 const TopLevelDelete = "TopLevelDelete"
+const TopLevelGetAll = "TopLevelGetAll"
 
 func init() {
 	strategies = make(map[string]func(stub shim.ChaincodeStubInterface, args []string) ([]byte, error))
@@ -43,13 +46,28 @@ func init() {
 	strategies[TopLevelQuest] = functions.TopLevelDomainResolve
 	strategies[TopLevelUpdate] = functions.TopLevelDomainUpdate
 	strategies[TopLevelDelete] = functions.TopLevelDomainDelete
-
+	strategies[TopLevelGetAll] = functions.TopLevelGetAllRecords
 }
 
 // Init init the domain-ip relation
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
+	table := &shim.Table{
+		Name: common.TABLE_NAME,
+		ColumnDefinitions: []*shim.ColumnDefinition{
+			{Name: "name", Type: shim.ColumnDefinition_STRING, Key: true},
+			{Name: "value", Type: shim.ColumnDefinition_STRING, Key: false},
+			{Name: "type", Type: shim.ColumnDefinition_STRING, Key: false},
+			{Name: "owner", Type: shim.ColumnDefinition_STRING, Key: false},
+			{Name: "ttl", Type: shim.ColumnDefinition_INT32, Key: false},
+			{Name: "updateTime", Type: shim.ColumnDefinition_UINT64, Key: false},
+			{Name: "createTime", Type: shim.ColumnDefinition_UINT64, Key: false},
+		},
+	}
+	if err := stub.CreateTable(table.Name, table.ColumnDefinitions); err != nil {
+		return nil, shim.ErrTableNotFound
+	}
 
-	var topLevelDomain, serverIp string
+	var topLevelDomain, serverAddress string
 	var err error
 	for _, arg := range args {
 		pairs := strings.Split(arg, ":")
@@ -57,20 +75,27 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 			return nil, errors.New("incorrect number of arguments. Expecting 2")
 		}
 		topLevelDomain = pairs[0]
-		serverIp = pairs[1]
+		serverAddress = pairs[1]
 		if len(pairs) == 2 {
-			serverIp = pairs[1] + ":53"
+			serverAddress = pairs[1] + ":53"
 		} else {
-			serverIp = pairs[1] + ":" + pairs[2]
+			serverAddress = pairs[1] + ":" + pairs[2]
 		}
-		if topLevelDomain == "" || !myutils.CheckValidIp(serverIp) {
+		if topLevelDomain == "" || !myutils.CheckValidIp(serverAddress) {
 			return nil, errors.New("input is invalid domain or ip")
 		}
 		// Write the state to the ledger
-		//record := myutils.BuildNewRecord(myutils.A, serverIp, 60, 0)
-		//recordJson, _ := json.Marshal(record)
-		err = stub.PutState(topLevelDomain, []byte(serverIp))
-		if err != nil {
+		record := common.TableRecord{
+			RecordName:  topLevelDomain,
+			RecordValue: serverAddress,
+			RecordType:  common.DEAULT_TYPE,
+			RecordOwner: common.DEAULT_OWNER,
+			RecordTTL:   common.DEAFULT_TTL,
+			CreateAt:    uint64(time.Now().Unix()),
+			UpdateAt:    uint64(time.Now().Unix()),
+		}
+		row := common.BuildRowFromRecord(record)
+		if _, err = stub.InsertRow(common.TABLE_NAME, row); err != nil {
 			return nil, errors.New("failed to update the domain-owner relation")
 		}
 	}

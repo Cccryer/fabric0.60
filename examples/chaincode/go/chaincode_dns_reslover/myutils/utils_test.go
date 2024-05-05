@@ -23,7 +23,7 @@ func TestCheckValidDomain(t *testing.T) {
 		{"TestCheckValidDomain", args{"https://www.google.com:8080/abc?def=123#456"}, true},
 		{"TestCheckValidDomain", args{"http://www.google.com:8080/abc?def=123#456/xyz/abc"}, true},
 		{"TestCheckValidDomain", args{"www.google.com"}, false},
-		{"TestCheckValidDomain", args{"com"}, false},
+		{"TestCheckValidDomain", args{"com"}, true},
 		{"TestCheckValidDomain", args{""}, false},
 	}
 	for _, tt := range tests {
@@ -76,6 +76,8 @@ func TestGetTopLevelDomain(t *testing.T) {
 		{"TestGetTopLevelDomain", args{"http://www.google.com:8080/abc"}, "com", false},
 		{"TestGetTopLevelDomain", args{"http://www.google.com:8080/abc?def=123"}, "com", false},
 		{"TestGetTopLevelDomain", args{"https://www.google.com:8080/abc?def=123#456"}, "com", false},
+		{"TestGetTopLevelDomain", args{"com"}, "com", false},
+		{"TestGetTopLevelDomain", args{"www.baidu.com"}, "com", false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -95,7 +97,7 @@ func TestBuildResponse(t *testing.T) {
 	type args struct {
 		status  bool
 		message string
-		data    map[string]string
+		data    map[string]interface{}
 	}
 	tests := []struct {
 		name string
@@ -107,13 +109,13 @@ func TestBuildResponse(t *testing.T) {
 			args: args{
 				status:  true,
 				message: "Success",
-				data:    map[string]string{"key": "value"},
+				data:    map[string]interface{}{"key": "value"},
 			},
 			want: func() []byte {
 				response := Response{
 					Code: Success,
 					Msg:  "Success",
-					Data: map[string]string{"key": "value"},
+					Data: map[string]interface{}{"key": "value"},
 				}
 				responseJson, _ := json.Marshal(response)
 				return responseJson
@@ -124,13 +126,13 @@ func TestBuildResponse(t *testing.T) {
 			args: args{
 				status:  false,
 				message: "Failed",
-				data:    map[string]string{"key": "value"},
+				data:    map[string]interface{}{"key": "value"},
 			},
 			want: func() []byte {
 				response := Response{
 					Code: Failed,
 					Msg:  "Failed",
-					Data: map[string]string{"key": "value"},
+					Data: map[string]interface{}{"key": "value"},
 				}
 				responseJson, _ := json.Marshal(response)
 				return responseJson

@@ -49,6 +49,9 @@ func GetTopLevelDomain(domain string) (string, error) {
 	}
 	hostParts := strings.Split(u.Host, ":")
 	tld := path.Ext(hostParts[0])
+	if tld == "" {
+		tld = hostParts[0]
+	}
 	return strings.TrimPrefix(tld, "."), nil
 }
 

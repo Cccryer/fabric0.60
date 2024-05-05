@@ -2,7 +2,10 @@ package functions
 
 import (
 	"errors"
+	"fmt"
+	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/common"
 	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/myutils"
+	"time"
 
 	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
@@ -23,9 +26,20 @@ func TopLevelDomainUpdate(stub shim.ChaincodeStubInterface, args []string) ([]by
 	if err != nil || len(topLevelDomain) == 0 {
 		return nil, errors.New("failed to get top level domain")
 	}
-	if err := stub.PutState(topLevelDomain, []byte(authorityServer)); err != nil {
+
+	// update the ledger
+	record := common.TableRecord{
+		RecordName:  topLevelDomain,
+		RecordValue: authorityServer,
+		RecordType:  common.DEAULT_TYPE,
+		RecordOwner: common.DEAULT_OWNER,
+		RecordTTL:   common.DEAFULT_TTL,
+		CreateAt:    0,
+		UpdateAt:    uint64(time.Now().Unix()),
+	}
+	if result, err = common.UpdateRecord(stub, record); err != nil {
 		result = false
-		return nil, errors.New("failed to update the domain-owner relation")
+		return nil, fmt.Errorf("failed to update record, %v", err)
 	}
 	return myutils.BuildResponse(result, "", nil), nil
 }
