@@ -25,14 +25,22 @@ type ResponseCode int
 // strategies 用于存储查询策略
 var strategies map[string]func(stub shim.ChaincodeStubInterface, args []string) ([]byte, error)
 
-const SimpleDomainQuest = "resolve"
-const SimpleDomainUpdate = "update"
-const SimpleDomainDelete = "delete"
+const (
+	SimpleDomainQuest  = "resolve"
+	SimpleDomainUpdate = "update"
+	SimpleDomainDelete = "delete"
+)
 
-const TopLevelUpdate = "TopLevelUpdate"
-const TopLevelQuest = "TopLevelQuest"
-const TopLevelDelete = "TopLevelDelete"
-const TopLevelGetAll = "TopLevelGetAll"
+const (
+	TopLevelUpdate = "TopLevelUpdate"
+	TopLevelQuest  = "TopLevelQuest"
+	TopLevelDelete = "TopLevelDelete"
+	TopLevelGetAll = "TopLevelGetAll"
+)
+
+const (
+	UserRegister = "UserRegister"
+)
 
 func init() {
 	strategies = make(map[string]func(stub shim.ChaincodeStubInterface, args []string) ([]byte, error))
@@ -47,6 +55,9 @@ func init() {
 	strategies[TopLevelUpdate] = functions.TopLevelDomainUpdate
 	strategies[TopLevelDelete] = functions.TopLevelDomainDelete
 	strategies[TopLevelGetAll] = functions.TopLevelGetAllRecords
+
+	// 用户操作
+	strategies[UserRegister] = functions.UserRegister
 }
 
 // Init init the domain-ip relation
@@ -98,6 +109,13 @@ func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface, function string
 		if _, err = stub.InsertRow(common.TABLE_NAME, row); err != nil {
 			return nil, errors.New("failed to update the domain-owner relation")
 		}
+	}
+
+	// 注册初始用户
+	err = stub.PutState(common.TableUserPrefix+common.INIT_ADMIN_NAME, []byte(common.INIT_ADMIN_CERTFICATE))
+	err = stub.PutState(common.TableUserPrefix+common.INIT_JIM_NAME, []byte(common.INIT_JIM_CERTFICATE))
+	if err != nil {
+		return nil, fmt.Errorf("init user failed %+v", err)
 	}
 	return myutils.BuildResponse(true, "", nil), nil
 }

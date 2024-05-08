@@ -1,7 +1,16 @@
 package myutils
 
 import (
+	"crypto/ecdsa"
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/x509"
+	"encoding/asn1"
+	"encoding/base64"
 	"encoding/json"
+	"encoding/pem"
+	"fmt"
+	"math/big"
 	"net/url"
 	"path"
 	"regexp"
@@ -108,4 +117,98 @@ func BuildNewRecord(recordType RecordType, value string, ttl int64, createAt int
 		CreatedAt: createAt,
 		UpdateAt:  time.Now().Unix(),
 	}
+}
+
+type ECDSASignature struct {
+	R, S *big.Int
+}
+
+// Sign 签名
+func Sign(certKey []byte, text string) string {
+
+	block, _ := pem.Decode(certKey)
+	if block == nil {
+		fmt.Printf("ERROR: block of decoded private key is nil\n")
+		return ""
+	}
+
+	privKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		fmt.Printf("ERROR: failed get ECDSA private key, %v\n", err)
+		return ""
+	}
+	ecPrivKey := privKey.(*ecdsa.PrivateKey)
+
+	hash := sha256.Sum256([]byte(text))
+	r, s, err := ecdsa.Sign(rand.Reader, ecPrivKey, hash[:])
+	if err != nil {
+		fmt.Printf("ERROR: failed to get signature, %v\n", err)
+		return ""
+	}
+
+	// asn1 output DER format
+	signature, err := asn1.Marshal(ECDSASignature{
+		R: r,
+		S: s,
+	})
+	if err != nil {
+		fmt.Printf("ERROR: asn1.Marshal ECDSA signature: %v\n", err)
+		return ""
+	}
+	fmt.Printf("%s\n", base64.StdEncoding.EncodeToString(signature))
+	return base64.StdEncoding.EncodeToString(signature)
+
+}
+
+// Verify VerifySignature 验证签名
+func Verify(certStr []byte, text string, sign string) bool {
+	block, _ := pem.Decode(certStr)
+	if block == nil {
+		fmt.Printf("ERROR: block of decoded private key is nil\n")
+		return false
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		fmt.Printf("ERROR: failed get ECDSA private key, error: %v\n", err)
+		return false
+	}
+
+	arr := []byte(text)
+	h := sha256.New()
+	h.Write(arr)
+	hashed := h.Sum(nil)
+
+	signatureDec, _ := base64.StdEncoding.DecodeString(sign)
+	sig := new(ECDSASignature)
+
+	_, err = asn1.Unmarshal(signatureDec, sig)
+	if err != nil {
+		fmt.Printf("ERROR: failed unmashalling signature, error: %v", err)
+		return false
+	}
+
+	pub, _ := cert.PublicKey.(*ecdsa.PublicKey)
+	if !ecdsa.Verify(pub, hashed[:], sig.R, sig.S) {
+		fmt.Printf("ERROR: Failed to verify Signature: %v\n", err)
+		return false
+	}
+	fmt.Printf("Successed to verify Signature and nonce\n")
+	return true
+}
+
+// VerifyCertificate 验证证书
+func VerifyCertificate(certStr []byte) bool {
+	block, _ := pem.Decode(certStr)
+	if block == nil {
+		fmt.Printf("ERROR: block of decoded private key is nil\n")
+		return false
+	}
+
+	_, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		fmt.Printf("ERROR: failed get ECDSA private key, error: %v\n", err)
+		return false
+	}
+	return true
 }

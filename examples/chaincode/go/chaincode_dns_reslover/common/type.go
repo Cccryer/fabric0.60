@@ -10,6 +10,15 @@ const TABLE_NAME = "dns_record"
 const DEAFULT_TTL = 86400
 const DEAULT_TYPE = "A"
 const DEAULT_OWNER = "admin"
+const TableUserPrefix = "USER_"
+
+const (
+	INIT_ADMIN_NAME       = "admin"
+	INIT_ADMIN_CERTFICATE = "-----BEGIN CERTIFICATE-----\nMIICCjCCAZGgAwIBAgIQAIvYoCKznwvKPCDx8ZyvtTAKBggqhkjOPQQDAjAXMRUw\nEwYDVQQDDAx3d3cudGFucy5mdW4wHhcNMjQwNTA4MDYxNzU1WhcNMjUwNTA4MDYx\nNzU1WjAXMRUwEwYDVQQDDAx3d3cudGFucy5mdW4wdjAQBgcqhkjOPQIBBgUrgQQA\nIgNiAASJ8KkFtmJVeUu30qei2lV/6ouCvDmu3+2IQDvxQz+b4+uEfd1jvBE2mH77\noTl/Lg9WGMrAOD64EdXQOlqK7UL53XESimQur9UFHJEW4IMq48ZYIdIKX9I3dMzE\nMSinf4WjgaEwgZ4wHQYDVR0OBBYEFJLmcANsF95a7AsSY5C6LyT7/fLZMA4GA1Ud\nDwEB/wQEAwIBhjAPBgNVHRMBAf8EBTADAQH/MDsGA1UdJQQ0MDIGCCsGAQUFBwMC\nBggrBgEFBQcDAQYIKwYBBQUHAwMGCCsGAQUFBwMEBggrBgEFBQcDCDAfBgNVHSME\nGDAWgBSS5nADbBfeWuwLEmOQui8k+/3y2TAKBggqhkjOPQQDAgNnADBkAjAHF4X5\nrhX8g1ZQAmz9pheV5wFFpjZOfM2jS9SVDbjNEw9vOOki8DAM/ripZMuOiT8CME6G\nbykxYmJJb3Rf3O2YKEqYmgOPkL3f0stA36cWNzp4C2PJqaQU2/ic16ZM1c63mg==\n-----END CERTIFICATE-----"
+
+	INIT_JIM_NAME       = "jim"
+	INIT_JIM_CERTFICATE = "-----BEGIN CERTIFICATE-----\nMIICCzCCAZGgAwIBAgIQAOpb0QCV/y0qdDtDHZEE7zAKBggqhkjOPQQDAjAXMRUw\nEwYDVQQDDAx3d3cudGFucy5mdW4wHhcNMjQwNTA4MDczODU2WhcNMjUwNTA4MDcz\nODU2WjAXMRUwEwYDVQQDDAx3d3cudGFucy5mdW4wdjAQBgcqhkjOPQIBBgUrgQQA\nIgNiAATCRfmQst/g22wAuSpRI9SOeeIiSHm6yFS/++d1FKdPC9I1VF5U2qjzvm5k\nJNUDBr7QSHqIcrtnuiZB+4xfVR5wIkir7mGx8kDq6yqUatZJhyI1mBvszrPGMWdL\n10LhxzijgaEwgZ4wHQYDVR0OBBYEFGEEKfoi8WRktgpNQ+5ZW1yWej0SMA4GA1Ud\nDwEB/wQEAwIBhjAPBgNVHRMBAf8EBTADAQH/MDsGA1UdJQQ0MDIGCCsGAQUFBwMC\nBggrBgEFBQcDAQYIKwYBBQUHAwMGCCsGAQUFBwMEBggrBgEFBQcDCDAfBgNVHSME\nGDAWgBRhBCn6IvFkZLYKTUPuWVtclno9EjAKBggqhkjOPQQDAgNoADBlAjAcdM3n\nsALhS5ksNd9h/XVXNFrNcrR22OKq81YLh3OU2GdWzAzqt8XU6UJM/UpudWECMQDt\nU/WJhQvaVAMr8XUrxjKdUoNThMh3J/zEAp3CZyS2vFfJa8cJDzV8j3s8a//8eVk=\n-----END CERTIFICATE-----"
+)
 
 type TableRecord struct {
 	RecordName  string `json:"record_name"`
@@ -23,13 +32,30 @@ type TableRecord struct {
 
 func BuildRecordFromRawRow(row shim.Row) TableRecord {
 	var record TableRecord
-	record.RecordName = row.Columns[0].GetString_()
-	record.RecordValue = row.Columns[1].GetString_()
-	record.RecordType = row.Columns[2].GetString_()
-	record.RecordOwner = row.Columns[3].GetString_()
-	record.RecordTTL = row.Columns[4].GetInt32()
-	record.CreateAt = row.Columns[5].GetUint64()
-	record.UpdateAt = row.Columns[6].GetUint64()
+	if row.GetColumns() == nil {
+		return TableRecord{}
+	}
+	if row.GetColumns()[0] != nil {
+		record.RecordName = row.Columns[0].GetString_()
+	}
+	if row.GetColumns()[1] != nil {
+		record.RecordValue = row.Columns[1].GetString_()
+	}
+	if row.GetColumns()[2] != nil {
+		record.RecordType = row.Columns[2].GetString_()
+	}
+	if row.GetColumns()[3] != nil {
+		record.RecordOwner = row.Columns[3].GetString_()
+	}
+	if row.GetColumns()[4] != nil {
+		record.RecordTTL = row.Columns[4].GetInt32()
+	}
+	if row.GetColumns()[5] != nil {
+		record.CreateAt = row.Columns[5].GetUint64()
+	}
+	if row.GetColumns()[6] != nil {
+		record.UpdateAt = row.Columns[6].GetUint64()
+	}
 	return record
 }
 
