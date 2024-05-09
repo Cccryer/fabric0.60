@@ -3,12 +3,10 @@ package functions
 import (
 	"errors"
 	"fmt"
+	"github.com/hyperledger/fabric/core/chaincode/shim"
 	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/common"
 	"github.com/hyperledger/fabric/examples/chaincode/go/chaincode_dns_reslover/myutils"
 	"strconv"
-	"time"
-
-	"github.com/hyperledger/fabric/core/chaincode/shim"
 )
 
 const IsDebug = false
@@ -74,7 +72,7 @@ func TopLevelDomainUpdate(stub shim.ChaincodeStubInterface, args []string) ([]by
 		RecordOwner: owner,
 		RecordTTL:   int32(ttl),
 		CreateAt:    0,
-		UpdateAt:    uint64(time.Now().Unix()),
+		UpdateAt:    0,
 	}
 	if result, err = common.UpdateRecord(stub, record); err != nil {
 		result = false

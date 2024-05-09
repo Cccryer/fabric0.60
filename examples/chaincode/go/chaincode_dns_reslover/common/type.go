@@ -3,7 +3,6 @@ package common
 import (
 	"fmt"
 	"github.com/hyperledger/fabric/core/chaincode/shim"
-	"time"
 )
 
 const TABLE_NAME = "dns_record"
@@ -91,7 +90,7 @@ func UpdateRecord(stub shim.ChaincodeStubInterface, record TableRecord) (bool, e
 		RecordOwner: record.RecordOwner,
 		RecordTTL:   record.RecordTTL,
 		CreateAt:    oldRecord.CreateAt,
-		UpdateAt:    uint64(time.Now().Unix()),
+		UpdateAt:    0,
 	}
 	if oldRecord == (TableRecord{}) {
 		newRecord.CreateAt = newRecord.UpdateAt
